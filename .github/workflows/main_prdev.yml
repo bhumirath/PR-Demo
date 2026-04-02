@@ -1,3 +1,4 @@
+503 Service Unavailable
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
@@ -29,13 +30,16 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
+      - name: Install production dependencies only
+        run: npm install --omit=dev
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: |
             .
-            !node_modules/
+            !node_modules/.cache/
 
   deploy:
     runs-on: ubuntu-latest
