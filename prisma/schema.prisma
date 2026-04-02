@@ -1,0 +1,123 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+  schemas  = ["pr"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prs             PurchaseRequisition[] @relation("CreatedBy")
+  approvalLogs    ApprovalLog[]
+  approvalSteps   ApprovalStep[]
+
+  @@schema("pr")
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+
+  @@schema("pr")
+}
+
+model PurchaseRequisition {
+  id          Int      @id @default(autoincrement())
+  prNumber    String   @unique
+  title       String
+  description String?  @db.NVarChar(Max)
+  status      String   @default("DRAFT")
+  totalAmount Decimal  @default(0)
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items         PurchaseItem[]
+  approvalSteps ApprovalStep[]
+  auditLogs     AuditLog[]
+
+  @@schema("pr")
+}
+
+model PurchaseItem {
+  id          Int                 @id @default(autoincrement())
+  pr          PurchaseRequisition @relation(fields: [prId], references: [id], onDelete: Cascade)
+  prId        Int
+  description String
+  quantity    Int
+  unitPrice   Decimal
+  totalPrice  Decimal
+  createdAt   DateTime            @default(now())
+
+  @@schema("pr")
+}
+
+model ApprovalStep {
+  id         Int                 @id @default(autoincrement())
+  pr         PurchaseRequisition @relation(fields: [prId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  prId       Int
+  approver   User                @relation(fields: [approverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approverId Int
+  level      Int
+  status     String              @default("PENDING")
+  comment    String?
+  decidedAt  DateTime?
+  createdAt  DateTime            @default(now())
+
+  logs ApprovalLog[]
+
+  @@schema("pr")
+}
+
+model ApprovalLog {
+  id        Int          @id @default(autoincrement())
+  step      ApprovalStep @relation(fields: [stepId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stepId    Int
+  user      User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  userId    Int
+  action    String
+  comment   String?
+  createdAt DateTime     @default(now())
+
+  @@schema("pr")
+}
+
+model PolicyRule {
+  id          Int     @id @default(autoincrement())
+  name        String
+  minAmount   Decimal
+  maxAmount   Decimal
+  autoApprove Boolean @default(false)
+  approverIds String  @db.NVarChar(Max)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@schema("pr")
+}
+
+model AuditLog {
+  id        Int                  @id @default(autoincrement())
+  pr        PurchaseRequisition? @relation(fields: [prId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  prId      Int?
+  action    String
+  userId    Int
+  userName  String
+  comment   String?
+  createdAt DateTime             @default(now())
+
+  @@schema("pr")
+}
