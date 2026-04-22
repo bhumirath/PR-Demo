@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.*
+deploy.zip
+test
+*.log
+.DS_Store
+web.config
+Dockerfile
+deploy.sh
